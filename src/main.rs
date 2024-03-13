@@ -68,7 +68,7 @@ fn main() -> Result<()> {
 
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
-        .with_title("Vulkan Tutorial (Rust)")
+        .with_title("Vulkan renderer")
         .with_inner_size(LogicalSize::new(1024, 768))
         .build(&event_loop)?;
 
@@ -155,7 +155,7 @@ impl App {
         data.surface = vk_window::create_surface(&instance, &window, &window)?;
         pick_physical_device(&instance, &mut data)?;
         let device = create_logical_device(&entry, &instance, &mut data)?;
-        let mut n_models = 1;
+        let mut n_models = 20;
         create_swapchain(window, &instance, &device, &mut data)?;
         create_swapchain_image_views(&device, &mut data)?;
         create_render_pass(&instance, &device, &mut data)?;
@@ -203,6 +203,7 @@ impl App {
             vk::Fence::null(),
         );
 
+
         let image_index = match result {
             Ok((image_index, _)) => image_index as usize,
             Err(vk::ErrorCode::OUT_OF_DATE_KHR) => return self.recreate_swapchain(window),
@@ -214,8 +215,6 @@ impl App {
             self.device
                 .wait_for_fences(&[image_in_flight], true, u64::MAX)?;
         }
-
-        self.data.images_in_flight[image_index] = in_flight_fence;
 
         self.update_command_buffer(image_index)?;
         self.update_uniform_buffer(image_index, cam)?;
@@ -281,12 +280,12 @@ impl App {
 
         let color_clear_value = vk::ClearValue {
             color: vk::ClearColorValue {
-                float32: [1.0, 1.0, 1.0, 1.0],
+                float32: [1.0, 1.0, 1.0, 0.5],
             },
         };
 
         let depth_clear_value = vk::ClearValue {
-            depth_stencil: vk::ClearDepthStencilValue { depth: 1.0, stencil: 0 },
+            depth_stencil: vk::ClearDepthStencilValue { depth: 0.6, stencil: 0 },
         };
 
         let clear_values = &[color_clear_value, depth_clear_value];
@@ -1316,7 +1315,6 @@ unsafe fn create_color_objects(
         vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::TRANSIENT_ATTACHMENT,
         vk::MemoryPropertyFlags::DEVICE_LOCAL,
     )?;
-
     data.color_image = color_image;
     data.color_image_memory = color_image_memory;
 
@@ -1425,7 +1423,7 @@ unsafe fn create_texture_image(
 ) -> Result<()> {
     // Load
 
-    let image = File::open("resources/viking_room.png")?;
+    let image = File::open("resources/red_texture.png")?;
 
     let decoder = png::Decoder::new(image);
     let mut reader = decoder.read_info()?;
@@ -1689,7 +1687,7 @@ unsafe fn create_texture_sampler(device: &Device, data: &mut AppData) -> Result<
         .address_mode_v(vk::SamplerAddressMode::REPEAT)
         .address_mode_w(vk::SamplerAddressMode::REPEAT)
         .anisotropy_enable(true)
-        .max_anisotropy(16.0)
+        .max_anisotropy(0.0)
         .border_color(vk::BorderColor::INT_OPAQUE_BLACK)
         .unnormalized_coordinates(false)
         .compare_enable(false)
